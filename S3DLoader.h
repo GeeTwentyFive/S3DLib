@@ -1,0 +1,145 @@
+#ifndef _S3D_LOADER_H
+#define _S3D_LOADER_H
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+
+typedef struct {
+        float x;
+        float y;
+        float z;
+} S3D_Vec3;
+
+typedef struct {
+        float u;
+        float v;
+} S3D_TexCoord;
+
+typedef struct {
+        S3D_Vec3 position;
+        S3D_Vec3 normal;
+        S3D_TexCoord tex_coord;
+} S3D_Vertex;
+
+typedef struct {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+} S3D_Color;
+
+typedef struct {
+        S3D_Vertex* vertices;
+        uint32_t vertices_count;
+
+        uint32_t* indices;
+        uint32_t indices_count;
+
+        uint32_t texture_width;
+        uint32_t texture_height;
+        S3D_Color* texture_data;
+} S3D_Mesh;
+
+
+S3D_Mesh* S3D_Load(const char* path) {
+        // Reading file data
+        FILE* file = fopen(path, "rb");
+        if (!file) return NULL;
+
+        fseek(file, 0, SEEK_END);
+        size_t file_size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+
+        char* file_data = (char*)malloc(file_size);
+        fread(file_data, file_size, 1, file);
+
+        fclose(file);
+
+
+        // Memory allocation
+        S3D_Mesh* mesh_data = (S3D_Mesh*) malloc(sizeof(S3D_Mesh));
+
+        mesh_data->vertices_count = *((uint32_t*)(file_data+0));
+        mesh_data->vertices = (S3D_Vertex*) malloc(
+                sizeof(S3D_Vertex) * mesh_data->vertices_count
+        );
+
+        mesh_data->indices_count = *((uint32_t*)(file_data+4));
+        mesh_data->indices = (uint32_t*) malloc(
+                sizeof(uint32_t) * mesh_data->indices_count
+        );
+
+        mesh_data->texture_width = *((uint32_t*)(file_data+8));
+        mesh_data->texture_height = *((uint32_t*)(file_data+12));
+        mesh_data->texture_data = (S3D_Color*) malloc(
+                sizeof(S3D_Color) * (
+                        mesh_data->texture_width * mesh_data->texture_height
+                )
+        );
+
+
+        // Vertex parsing
+        for (uint32_t i = 0; i < mesh_data->vertices_count; i++) {
+                mesh_data->vertices[i] = S3D_Vertex {
+                        .position = {
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*0))),
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*1))),
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*2)))
+                        },
+                        .normal = {
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*3))),
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*4))),
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*5)))
+                        },
+                        .tex_coord = {
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*6))),
+                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*7)))
+                        }
+                };
+        }
+
+
+        // Index parsing
+        for (uint32_t i = 0; i < mesh_data->indices_count; i++) {
+                mesh_data->indices[i] = *((uint32_t*)
+                        (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*i))
+                );
+        }
+
+
+        // Texture parsing
+        for (
+                uint32_t i = 0;
+                i < (mesh_data->texture_width * mesh_data->texture_height);
+                i += 4
+        ) {
+                mesh_data->texture_data[i] = S3D_Color {
+                        .r = *((uint8_t*)
+                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 0))
+                        ),
+                        .g = *((uint8_t*)
+                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 1))
+                        ),
+                        .b = *((uint8_t*)
+                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 2))
+                        ),
+                        .a = *((uint8_t*)
+                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 3))
+                        )
+                };
+        }
+
+
+        return mesh_data;
+}
+
+void S3D_Free(S3D_Mesh* mesh_data) {
+        free(mesh_data->vertices);
+        free(mesh_data->indices);
+        free(mesh_data->texture_data);
+        free(mesh_data);
+}
+
+#endif // _S3D_LOADER_H
