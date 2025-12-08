@@ -50,7 +50,7 @@ typedef enum {
         S3D_WRITE_FAILED_TO_WRITE_DATA
 } S3D_Write_ERROR;
 
-int S3D_Write(S3D_Mesh* mesh_data, const char* out_path) {
+S3D_Write_ERROR S3D_Write(S3D_Mesh* mesh_data, const char* out_path) {
         size_t out_data_size = (
                 16 +
                 mesh_data->vertices_count * 8*sizeof(float) +
