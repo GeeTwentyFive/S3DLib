@@ -53,23 +53,46 @@ S3D_Mesh* S3D_Load(const char* path) {
         fseek(file, 0, SEEK_SET);
 
         char* file_data = (char*)malloc(file_size);
-        fread(file_data, file_size, 1, file);
+        if (!file_data) {
+                fclose(file);
+                return NULL;
+        }
+        if (fread(file_data, 1, file_size, file) != file_size) {
+                fclose(file);
+                free(file_data);
+                return NULL;
+        }
 
         fclose(file);
 
 
         // Memory allocation
         S3D_Mesh* mesh_data = (S3D_Mesh*) malloc(sizeof(S3D_Mesh));
+        if (!mesh_data) {
+                free(file_data);
+                return NULL;
+        }
 
         mesh_data->vertices_count = *((uint32_t*)(file_data+0));
         mesh_data->vertices = (S3D_Vertex*) malloc(
                 sizeof(S3D_Vertex) * mesh_data->vertices_count
         );
+        if (!mesh_data->vertices) {
+                free(file_data);
+                free(mesh_data);
+                return NULL;
+        }
 
         mesh_data->indices_count = *((uint32_t*)(file_data+4));
         mesh_data->indices = (uint32_t*) malloc(
                 sizeof(uint32_t) * mesh_data->indices_count
         );
+        if (!mesh_data->indices) {
+                free(file_data);
+                free(mesh_data);
+                free(mesh_data->vertices);
+                return NULL;
+        }
 
         mesh_data->texture_width = *((uint32_t*)(file_data+8));
         mesh_data->texture_height = *((uint32_t*)(file_data+12));
@@ -78,24 +101,31 @@ S3D_Mesh* S3D_Load(const char* path) {
                         mesh_data->texture_width * mesh_data->texture_height
                 )
         );
+        if (!mesh_data->texture_data) {
+                free(file_data);
+                free(mesh_data);
+                free(mesh_data->vertices);
+                free(mesh_data->indices);
+                return NULL;
+        }
 
 
         // Vertex parsing
         for (uint32_t i = 0; i < mesh_data->vertices_count; i++) {
                 mesh_data->vertices[i] = S3D_Vertex {
                         .position = {
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*0))),
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*1))),
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*2)))
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*0))),
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*1))),
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*2)))
                         },
                         .normal = {
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*3))),
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*4))),
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*5)))
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*3))),
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*4))),
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*5)))
                         },
                         .tex_coord = {
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*6))),
-                                *((float*)(file_data+(12 + sizeof(S3D_Vertex)*i + sizeof(float)*7)))
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*6))),
+                                *((float*)(file_data+(16 + 8*sizeof(float)*i + sizeof(float)*7)))
                         }
                 };
         }
@@ -104,7 +134,7 @@ S3D_Mesh* S3D_Load(const char* path) {
         // Index parsing
         for (uint32_t i = 0; i < mesh_data->indices_count; i++) {
                 mesh_data->indices[i] = *((uint32_t*)
-                        (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*i))
+                        (file_data+(16 + 8*sizeof(float)*mesh_data->vertices_count + sizeof(uint32_t)*i))
                 );
         }
 
@@ -113,24 +143,26 @@ S3D_Mesh* S3D_Load(const char* path) {
         for (
                 uint32_t i = 0;
                 i < (mesh_data->texture_width * mesh_data->texture_height);
-                i += 4
+                i++
         ) {
                 mesh_data->texture_data[i] = S3D_Color {
                         .r = *((uint8_t*)
-                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 0))
+                                (file_data+(16 + 8*sizeof(float)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + 4*sizeof(uint8_t)*i + 0))
                         ),
                         .g = *((uint8_t*)
-                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 1))
+                                (file_data+(16 + 8*sizeof(float)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + 4*sizeof(uint8_t)*i + 1))
                         ),
                         .b = *((uint8_t*)
-                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 2))
+                                (file_data+(16 + 8*sizeof(float)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + 4*sizeof(uint8_t)*i + 2))
                         ),
                         .a = *((uint8_t*)
-                                (file_data+(12 + sizeof(S3D_Vertex)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + sizeof(uint8_t)*i + 3))
+                                (file_data+(16 + 8*sizeof(float)*mesh_data->vertices_count + sizeof(uint32_t)*mesh_data->indices_count + 4*sizeof(uint8_t)*i + 3))
                         )
                 };
         }
 
+
+        free(file_data);
 
         return mesh_data;
 }
