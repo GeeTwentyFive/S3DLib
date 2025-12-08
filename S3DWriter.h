@@ -6,6 +6,9 @@
 #include <stdlib.h>
 
 
+#ifndef _S3D_TYPES
+#define _S3D_TYPES
+
 typedef struct {
         float x;
         float y;
@@ -41,6 +44,8 @@ typedef struct {
         uint32_t texture_height;
         S3D_Color* texture_data;
 } S3D_Mesh;
+
+#endif // _S3D_TYPES
 
 
 typedef enum {

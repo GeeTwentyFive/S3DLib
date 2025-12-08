@@ -17,5 +17,9 @@ S3D_Free(mesh_data);
 
 # Writer usage
 ```c
-// TODO
+S3D_Write_ERROR err = S3D_Write(&mesh, "PATH/TO/OUT.s3d");
+if (err != S3D_WRITE_SUCCESS) {
+        printf("S3D writing failed with error code %d\n", err);
+        exit(1);
+}
 ```

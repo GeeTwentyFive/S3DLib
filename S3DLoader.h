@@ -6,6 +6,9 @@
 #include <stdlib.h>
 
 
+#ifndef _S3D_TYPES
+#define _S3D_TYPES
+
 typedef struct {
         float x;
         float y;
@@ -41,6 +44,8 @@ typedef struct {
         uint32_t texture_height;
         S3D_Color* texture_data;
 } S3D_Mesh;
+
+#endif // _S3D_TYPES
 
 
 S3D_Mesh* S3D_Load(const char* path) {
@@ -119,7 +124,7 @@ S3D_Mesh* S3D_Load(const char* path) {
 
         // Vertex parsing
         for (uint32_t i = 0; i < mesh_data->vertices_count; i++) {
-                mesh_data->vertices[i] = S3D_Vertex {
+                mesh_data->vertices[i] = (S3D_Vertex) {
                         .position = {
                                 *((float*)(file_data_offset + sizeof(float)*0)),
                                 *((float*)(file_data_offset + sizeof(float)*1)),
@@ -152,7 +157,7 @@ S3D_Mesh* S3D_Load(const char* path) {
                 i < (mesh_data->texture_width * mesh_data->texture_height);
                 i++
         ) {
-                mesh_data->texture_data[i] = S3D_Color {
+                mesh_data->texture_data[i] = (S3D_Color) {
                         .r = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*0)),
                         .g = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*1)),
                         .b = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*2)),
