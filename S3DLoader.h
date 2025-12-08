@@ -40,9 +40,8 @@ typedef struct {
         uint32_t* indices;
         uint32_t indices_count;
 
-        uint32_t texture_width;
-        uint32_t texture_height;
-        S3D_Color* texture_data;
+        S3D_Color* texture_RGBA;
+        uint32_t texture_RGBA_count;
 } S3D_Mesh;
 
 #endif // _S3D_TYPES
@@ -104,16 +103,12 @@ S3D_Mesh* S3D_Load(const char* path) {
                 return NULL;
         }
 
-        mesh_data->texture_width = *((uint32_t*)(file_data_offset));
+        mesh_data->texture_RGBA_count = *((uint32_t*)(file_data_offset));
         file_data_offset += sizeof(uint32_t);
-        mesh_data->texture_height = *((uint32_t*)(file_data_offset));
-        file_data_offset += sizeof(uint32_t);
-        mesh_data->texture_data = (S3D_Color*) malloc(
-                sizeof(S3D_Color) * (
-                        mesh_data->texture_width * mesh_data->texture_height
-                )
+        mesh_data->texture_RGBA = (S3D_Color*) malloc(
+                sizeof(S3D_Color) * mesh_data->texture_RGBA_count
         );
-        if (!mesh_data->texture_data) {
+        if (!mesh_data->texture_RGBA) {
                 free(file_data);
                 free(mesh_data);
                 free(mesh_data->vertices);
@@ -152,12 +147,8 @@ S3D_Mesh* S3D_Load(const char* path) {
 
 
         // Texture parsing
-        for (
-                uint32_t i = 0;
-                i < (mesh_data->texture_width * mesh_data->texture_height);
-                i++
-        ) {
-                mesh_data->texture_data[i] = (S3D_Color) {
+        for (uint32_t i = 0; i < mesh_data->texture_RGBA_count; i++) {
+                mesh_data->texture_RGBA[i] = (S3D_Color) {
                         .r = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*0)),
                         .g = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*1)),
                         .b = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*2)),
@@ -175,7 +166,7 @@ S3D_Mesh* S3D_Load(const char* path) {
 void S3D_Free(S3D_Mesh* mesh_data) {
         free(mesh_data->vertices);
         free(mesh_data->indices);
-        free(mesh_data->texture_data);
+        free(mesh_data->texture_RGBA);
         free(mesh_data);
 }
 

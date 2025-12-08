@@ -36,7 +36,7 @@ uint32_t indices[INDICES_COUNT] = {
 
 #define TEXTURE_WIDTH 2
 #define TEXTURE_HEIGHT 2
-S3D_Color texture_data[TEXTURE_WIDTH * TEXTURE_HEIGHT] = {
+S3D_Color texture_RGBA[TEXTURE_WIDTH * TEXTURE_HEIGHT] = {
         {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF},
         {0x00, 0x00, 0xFF, 0xFF}, {0x00, 0x00, 0x00, 0xFF}
 };
@@ -48,9 +48,8 @@ S3D_Mesh mesh = {
         .indices = (uint32_t*) &indices,
         .indices_count = INDICES_COUNT,
 
-        .texture_width = TEXTURE_WIDTH,
-        .texture_height = TEXTURE_HEIGHT,
-        .texture_data = (S3D_Color*) &texture_data
+        .texture_RGBA = (S3D_Color*) &texture_RGBA,
+        .texture_RGBA_count = TEXTURE_WIDTH * TEXTURE_HEIGHT
 };
 
 int main() {
@@ -69,16 +68,15 @@ int main() {
         puts("Loaded EXAMPLE.s3d");
 
         printf(
+                "\n"
                 "Vertices count: %d\n"
                 "Indices count: %d\n"
-                "Texture width: %d\n"
-                "Texture height: %d\n"
+                "Texture RGBA count: %d\n"
                 "\n",
 
                 loaded_mesh_data->vertices_count,
                 loaded_mesh_data->indices_count,
-                loaded_mesh_data->texture_width,
-                loaded_mesh_data->texture_height
+                loaded_mesh_data->texture_RGBA_count
         );
 
         puts("Vertices:");
@@ -108,16 +106,19 @@ int main() {
         }
 
         puts("Indices:");
-        for (uint32_t i = 0; i < loaded_mesh_data->indices_count; i++) {
-                printf("%d\n", loaded_mesh_data->indices[i]);
+        for (uint32_t i = 0; i < loaded_mesh_data->indices_count; i += 3) {
+                printf(
+                        "%d %d %d\n",
+
+                        loaded_mesh_data->indices[i],
+                        loaded_mesh_data->indices[i + 1],
+                        loaded_mesh_data->indices[i + 2]
+                );
         }
+        putchar('\n');
 
         puts("Texture data:");
-        for (
-                uint32_t i = 0;
-                i < (loaded_mesh_data->texture_width * loaded_mesh_data->texture_height);
-                i++
-        ) {
+        for (uint32_t i = 0; i < loaded_mesh_data->texture_RGBA_count; i++) {
                 printf(
                         "R: %d\n"
                         "G: %d\n"
@@ -125,10 +126,10 @@ int main() {
                         "A: %d\n"
                         "\n",
 
-                        loaded_mesh_data->texture_data[i].r,
-                        loaded_mesh_data->texture_data[i].g,
-                        loaded_mesh_data->texture_data[i].b,
-                        loaded_mesh_data->texture_data[i].a
+                        loaded_mesh_data->texture_RGBA[i].r,
+                        loaded_mesh_data->texture_RGBA[i].g,
+                        loaded_mesh_data->texture_RGBA[i].b,
+                        loaded_mesh_data->texture_RGBA[i].a
                 );
         }
 
