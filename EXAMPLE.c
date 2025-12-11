@@ -9,22 +9,22 @@ S3D_Vertex vertices[VERTICES_COUNT] = {
         {
                 .position = {0.5, 0.5, 0.0},
                 .normal = {1.0, 0.0, 0.0},
-                .tex_coord = {1.0, 0.0}
+                .color_RGB = {1.0, 0.0, 0.0}
         },
         {
                 .position = {0.5, -0.5, 0.0},
                 .normal = {0.0, 1.0, 0.0},
-                .tex_coord = {1.0, 1.0}
+                .color_RGB = {0.0, 1.0, 0.0}
         },
         {
                 .position = {-0.5, -0.5, 0.0},
                 .normal = {-1.0, 0.0, 0.0},
-                .tex_coord = {0.0, 1.0}
+                .color_RGB = {0.0, 0.0, 1.0}
         },
         {
                 .position = {-0.5, 0.5, 0.0},
                 .normal = {0.0, -1.0, 0.0},
-                .tex_coord = {0.0, 0.0}
+                .color_RGB = {1.0, 1.0, 1.0}
         }
 };
 
@@ -34,22 +34,12 @@ uint32_t indices[INDICES_COUNT] = {
         1, 2, 3
 };
 
-#define TEXTURE_WIDTH 2
-#define TEXTURE_HEIGHT 2
-S3D_Color texture_RGBA[TEXTURE_WIDTH * TEXTURE_HEIGHT] = {
-        {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF},
-        {0x00, 0x00, 0xFF, 0xFF}, {0x00, 0x00, 0x00, 0xFF}
-};
-
 S3D_Mesh mesh = {
         .vertices = (S3D_Vertex*) &vertices,
         .vertices_count = VERTICES_COUNT,
 
         .indices = (uint32_t*) &indices,
         .indices_count = INDICES_COUNT,
-
-        .texture_RGBA = (S3D_Color*) &texture_RGBA,
-        .texture_RGBA_count = TEXTURE_WIDTH * TEXTURE_HEIGHT
 };
 
 int main() {
@@ -59,6 +49,7 @@ int main() {
                 return 1;
         }
         puts("Written EXAMPLE.s3d");
+
 
         S3D_Mesh* loaded_mesh_data = S3D_Load("EXAMPLE.s3d");
         if (!loaded_mesh_data) {
@@ -71,12 +62,10 @@ int main() {
                 "\n"
                 "Vertices count: %d\n"
                 "Indices count: %d\n"
-                "Texture RGBA count: %d\n"
                 "\n",
 
                 loaded_mesh_data->vertices_count,
-                loaded_mesh_data->indices_count,
-                loaded_mesh_data->texture_RGBA_count
+                loaded_mesh_data->indices_count
         );
 
         puts("Vertices:");
@@ -88,8 +77,9 @@ int main() {
                         "normal X: %f\n"
                         "normal Y: %f\n"
                         "normal Z: %f\n"
-                        "texcoord U: %f\n"
-                        "texcoord V: %f\n"
+                        "color R: %f\n"
+                        "color G: %f\n"
+                        "color B: %f\n"
                         "\n",
 
                         loaded_mesh_data->vertices[i].position.x,
@@ -100,8 +90,9 @@ int main() {
                         loaded_mesh_data->vertices[i].normal.y,
                         loaded_mesh_data->vertices[i].normal.z,
 
-                        loaded_mesh_data->vertices[i].tex_coord.u,
-                        loaded_mesh_data->vertices[i].tex_coord.v
+                        loaded_mesh_data->vertices[i].color_RGB.x,
+                        loaded_mesh_data->vertices[i].color_RGB.y,
+                        loaded_mesh_data->vertices[i].color_RGB.z
                 );
         }
 
@@ -115,25 +106,9 @@ int main() {
                         loaded_mesh_data->indices[i + 2]
                 );
         }
-        putchar('\n');
-
-        puts("Texture data:");
-        for (uint32_t i = 0; i < loaded_mesh_data->texture_RGBA_count; i++) {
-                printf(
-                        "R: %d\n"
-                        "G: %d\n"
-                        "B: %d\n"
-                        "A: %d\n"
-                        "\n",
-
-                        loaded_mesh_data->texture_RGBA[i].r,
-                        loaded_mesh_data->texture_RGBA[i].g,
-                        loaded_mesh_data->texture_RGBA[i].b,
-                        loaded_mesh_data->texture_RGBA[i].a
-                );
-        }
 
         S3D_Free(loaded_mesh_data);
+
 
         return 0;
 }

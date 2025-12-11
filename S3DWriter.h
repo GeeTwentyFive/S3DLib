@@ -16,22 +16,10 @@ typedef struct {
 } S3D_Vec3;
 
 typedef struct {
-        float u;
-        float v;
-} S3D_TexCoord;
-
-typedef struct {
         S3D_Vec3 position;
         S3D_Vec3 normal;
-        S3D_TexCoord tex_coord;
+        S3D_Vec3 color_RGB;
 } S3D_Vertex;
-
-typedef struct {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-        uint8_t a;
-} S3D_Color;
 
 typedef struct {
         S3D_Vertex* vertices;
@@ -39,9 +27,6 @@ typedef struct {
 
         uint32_t* indices;
         uint32_t indices_count;
-
-        S3D_Color* texture_RGBA;
-        uint32_t texture_RGBA_count;
 } S3D_Mesh;
 
 #endif // _S3D_TYPES
@@ -56,10 +41,9 @@ typedef enum {
 
 S3D_Write_ERROR S3D_Write(S3D_Mesh* mesh_data, const char* out_path) {
         size_t out_data_size = (
-                12 +
-                mesh_data->vertices_count * 8*sizeof(float) +
-                mesh_data->indices_count * sizeof(uint32_t) +
-                mesh_data->texture_RGBA_count * 4*sizeof(uint8_t)
+                8 +
+                mesh_data->vertices_count * 9*sizeof(float) +
+                mesh_data->indices_count * sizeof(uint32_t)
         );
         char* out_buf = (char*) malloc(out_data_size);
         if (!out_buf) return S3D_WRITE_FAILED_TO_ALLOCATE_MEMORY;
@@ -69,8 +53,6 @@ S3D_Write_ERROR S3D_Write(S3D_Mesh* mesh_data, const char* out_path) {
         *((uint32_t*)(out_buf_front)) = mesh_data->vertices_count;
         out_buf_front += sizeof(uint32_t);
         *((uint32_t*)(out_buf_front)) = mesh_data->indices_count;
-        out_buf_front += sizeof(uint32_t);
-        *((uint32_t*)(out_buf_front)) = mesh_data->texture_RGBA_count;
         out_buf_front += sizeof(uint32_t);
 
         for (uint32_t i = 0; i < mesh_data->vertices_count; i++) {
@@ -88,26 +70,17 @@ S3D_Write_ERROR S3D_Write(S3D_Mesh* mesh_data, const char* out_path) {
                 *((float*)(out_buf_front)) = mesh_data->vertices[i].normal.z;
                 out_buf_front += sizeof(float);
 
-                *((float*)(out_buf_front)) = mesh_data->vertices[i].tex_coord.u;
+                *((float*)(out_buf_front)) = mesh_data->vertices[i].color_RGB.x;
                 out_buf_front += sizeof(float);
-                *((float*)(out_buf_front)) = mesh_data->vertices[i].tex_coord.v;
+                *((float*)(out_buf_front)) = mesh_data->vertices[i].color_RGB.y;
+                out_buf_front += sizeof(float);
+                *((float*)(out_buf_front)) = mesh_data->vertices[i].color_RGB.z;
                 out_buf_front += sizeof(float);
         }
 
         for (uint32_t i = 0; i < mesh_data->indices_count; i++) {
                 *((uint32_t*)(out_buf_front)) = mesh_data->indices[i];
                 out_buf_front += sizeof(uint32_t);
-        }
-
-        for (uint32_t i = 0; i < mesh_data->texture_RGBA_count; i++) {
-                *((uint8_t*)(out_buf_front)) = mesh_data->texture_RGBA[i].r;
-                out_buf_front += sizeof(uint8_t);
-                *((uint8_t*)(out_buf_front)) = mesh_data->texture_RGBA[i].g;
-                out_buf_front += sizeof(uint8_t);
-                *((uint8_t*)(out_buf_front)) = mesh_data->texture_RGBA[i].b;
-                out_buf_front += sizeof(uint8_t);
-                *((uint8_t*)(out_buf_front)) = mesh_data->texture_RGBA[i].a;
-                out_buf_front += sizeof(uint8_t);
         }
 
 

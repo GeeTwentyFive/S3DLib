@@ -16,22 +16,10 @@ typedef struct {
 } S3D_Vec3;
 
 typedef struct {
-        float u;
-        float v;
-} S3D_TexCoord;
-
-typedef struct {
         S3D_Vec3 position;
         S3D_Vec3 normal;
-        S3D_TexCoord tex_coord;
+        S3D_Vec3 color_RGB;
 } S3D_Vertex;
-
-typedef struct {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-        uint8_t a;
-} S3D_Color;
 
 typedef struct {
         S3D_Vertex* vertices;
@@ -39,9 +27,6 @@ typedef struct {
 
         uint32_t* indices;
         uint32_t indices_count;
-
-        S3D_Color* texture_RGBA;
-        uint32_t texture_RGBA_count;
 } S3D_Mesh;
 
 #endif // _S3D_TYPES
@@ -103,19 +88,6 @@ S3D_Mesh* S3D_Load(const char* path) {
                 return NULL;
         }
 
-        mesh_data->texture_RGBA_count = *((uint32_t*)(file_data_offset));
-        file_data_offset += sizeof(uint32_t);
-        mesh_data->texture_RGBA = (S3D_Color*) malloc(
-                sizeof(S3D_Color) * mesh_data->texture_RGBA_count
-        );
-        if (!mesh_data->texture_RGBA) {
-                free(file_data);
-                free(mesh_data);
-                free(mesh_data->vertices);
-                free(mesh_data->indices);
-                return NULL;
-        }
-
 
         // Vertex parsing
         for (uint32_t i = 0; i < mesh_data->vertices_count; i++) {
@@ -130,12 +102,13 @@ S3D_Mesh* S3D_Load(const char* path) {
                                 *((float*)(file_data_offset + sizeof(float)*4)),
                                 *((float*)(file_data_offset + sizeof(float)*5))
                         },
-                        .tex_coord = {
+                        .color_RGB = {
                                 *((float*)(file_data_offset + sizeof(float)*6)),
-                                *((float*)(file_data_offset + sizeof(float)*7))
+                                *((float*)(file_data_offset + sizeof(float)*7)),
+                                *((float*)(file_data_offset + sizeof(float)*8))
                         }
                 };
-                file_data_offset += 8*sizeof(float);
+                file_data_offset += 9*sizeof(float);
         }
 
 
@@ -143,18 +116,6 @@ S3D_Mesh* S3D_Load(const char* path) {
         for (uint32_t i = 0; i < mesh_data->indices_count; i++) {
                 mesh_data->indices[i] = *((uint32_t*)(file_data_offset));
                 file_data_offset += sizeof(uint32_t);
-        }
-
-
-        // Texture parsing
-        for (uint32_t i = 0; i < mesh_data->texture_RGBA_count; i++) {
-                mesh_data->texture_RGBA[i] = (S3D_Color) {
-                        .r = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*0)),
-                        .g = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*1)),
-                        .b = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*2)),
-                        .a = *((uint8_t*)(file_data_offset + sizeof(uint8_t)*3))
-                };
-                file_data_offset += 4*sizeof(uint8_t);
         }
 
 
@@ -166,7 +127,6 @@ S3D_Mesh* S3D_Load(const char* path) {
 void S3D_Free(S3D_Mesh* mesh_data) {
         free(mesh_data->vertices);
         free(mesh_data->indices);
-        free(mesh_data->texture_RGBA);
         free(mesh_data);
 }
 
